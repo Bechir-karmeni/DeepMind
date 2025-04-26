@@ -123,7 +123,7 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 
 EMAIL_HOST_USER = 'bachirkarmeni@gmail.com'  # ✅ ton adresse Gmail
-EMAIL_HOST_PASSWORD = 'svkn hjid kccr zvga'       # ⚠️ mot de passe d'application
+EMAIL_HOST_PASSWORD = ''       # ⚠️ mot de passe d'application
 
 
 # ========================
