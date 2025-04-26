@@ -1,0 +1,266 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Deep Mind</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-gauge@0.4.0/dist/chartjs-gauge.min.js"></script>
+  <style>
+    body {
+      background: #fff;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    .card {
+      border: none;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+    .kpi-number {
+      font-size: 1.6rem;
+      font-weight: bold;
+    }
+    canvas {
+      max-height: 220px;
+    }
+    .kpi-label {
+      font-size: 0.9rem;
+      color: #6c757d;
+    }
+    .logo {
+      height: 40px;
+    }
+  </style>
+</head>
+<body class="p-3">
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm mb-4">
+  <div class="container-fluid">
+    <a class="navbar-brand d-flex align-items-center gap-2" href="#">
+      <strong>Deep Mind</strong>
+    </a>
+    <span class="text-muted">📅 {{ now|date:"d M Y" }} - 🕒 {{ now|time:"H:i" }}</span>
+  </div>
+</nav>
+
+<div class="container-fluid">
+
+  <!-- KPIs -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-2 col-sm-6">
+      <div class="card p-3 text-center">
+        <div class="kpi-label">Formulaires remplis</div>
+        <div class="kpi-number">150</div>
+      </div>
+    </div>
+    <div class="col-md-2 col-sm-6">
+      <div class="card p-3 text-center">
+        <div class="kpi-label">Score PHQ-9 (moyen)</div>
+        <div class="kpi-number">{{ avg_phq9|floatformat:1 }}</div>
+      </div>
+    </div>
+    <div class="col-md-2 col-sm-6">
+      <div class="card p-3 text-center">
+        <div class="kpi-label">Score GAD-7 (moyen)</div>
+        <div class="kpi-number">{{ avg_gad7|floatformat:1 }}</div>
+      </div>
+    </div>
+    <div class="col-md-2 col-sm-6">
+      <div class="card p-3 text-center">
+        <div class="kpi-label">Score MBI (moyen)</div>
+        <div class="kpi-number">{{ avg_mbi|floatformat:1 }}</div>
+      </div>
+    </div>
+    <div class="col-md-2 col-sm-6">
+      <div class="card p-3 text-center">
+        <div class="kpi-label">Utilisateurs à risque</div>
+        <div class="kpi-number">{{ risk_percent }}%</div>
+      </div>
+    </div>
+    <div class="col-md-2 col-sm-6">
+      <div class="card p-3 text-center">
+        <div class="kpi-label">Turnover estimé</div>
+        <div class="kpi-number">{{ turnover_percent }}%</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 📤 Send Email Button -->
+  <div class="text-end my-3">
+    <a href="/send-email/" class="btn btn-primary btn-lg">
+      ✉️ Envoyer un formulaire à un employé
+    </a>
+  </div>
+
+  <!-- Pie chart + Quit % Chart -->
+  <div class="row g-3 mb-3">
+    <div class="col-md-4">
+      <div class="card p-3">
+        <h6>Pourcentage des réponses </h6>
+        <canvas id="responsesPieChart"></canvas>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card p-3">
+        <h6> % employés quittant leur poste par departement</h6>
+        <canvas id="leavePercentChart"></canvas>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card p-3">
+        <h6>Pourcentage d'Utilisateurs risque</h6>
+        <canvas id="sampleBarChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bar Charts per score -->
+  <div class="row g-3 mb-3">
+    <div class="col-md-4">
+      <div class="card p-3">
+        <h6>Pourcentage PHQ-9 </h6>
+        <canvas id="phq9Chart"></canvas>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card p-3">
+        <h6>Pourcentage GAD-7 </h6>
+        <canvas id="gad7Chart"></canvas>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card p-3">
+        <h6>Pourcentage MBI</h6>
+        <canvas id="mbiChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+
+
+<!-- Données JSON -->
+{{ by_sector|json_script:"sector-data" }}
+
+<script>
+  const raw = JSON.parse(document.getElementById("sector-data").textContent);
+  const sectors = raw.map(s => s.sector);
+  const counts = raw.map(s => s.count);
+  const phq9 = raw.map(s => s.avg_phq9);
+  const gad7 = raw.map(s => s.avg_gad7);
+  const mbi = raw.map(s => s.avg_mbi);
+
+  new Chart(document.getElementById("responsesPieChart"), {
+    type: 'pie',
+    data: {
+      labels: sectors,
+      datasets: [{
+        data: counts,
+        backgroundColor: ['#f06292', '#ba68c8', '#4fc3f7', '#4db6ac', '#ffca28', '#e57373']
+      }]
+    }
+  });
+
+  new Chart(document.getElementById("phq9Chart"), {
+    type: 'bar',
+    data: {
+      labels: sectors,
+      datasets: [{ label: 'PHQ-9', data: phq9, backgroundColor: 'rgba(54, 162, 235, 0.7)' }]
+    }
+  });
+
+  new Chart(document.getElementById("gad7Chart"), {
+    type: 'bar',
+    data: {
+      labels: sectors,
+      datasets: [{ label: 'GAD-7', data: gad7, backgroundColor: 'rgba(255, 99, 132, 0.7)' }]
+    }
+  });
+
+  new Chart(document.getElementById("mbiChart"), {
+    type: 'bar',
+    data: {
+      labels: sectors,
+      datasets: [{ label: 'MBI', data: mbi, backgroundColor: 'rgba(255, 206, 86, 0.7)' }]
+    }
+  });
+
+  const quit = { "Finance": 31, "Marketing": 22, "Embedded Systems": 42, "Software Eng": 17, "Electronics": 28, "Mechatronics": 18 };
+  const quitPercent = { "Finance": 25, "Marketing": 18, "Embedded Systems": 37, "Software Eng": 10, "Electronics": 20, "Mechatronics": 15 };
+  const sampleBarData = [60, 40, 55, 30, 70, 50];
+
+  new Chart(document.getElementById("quitPred"), {
+    type: 'bar',
+    data: {
+      labels: Object.keys(quit),
+      datasets: [{
+        label: "Départs prédits (%)",
+        data: Object.values(quit),
+        backgroundColor: 'rgba(244, 67, 54, 0.7)'
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: { y: { beginAtZero: true, max: 100 } }
+    }
+  });
+
+  new Chart(document.getElementById("leavePercentChart"), {
+    type: 'bar',
+    data: {
+      labels: Object.keys(quitPercent),
+      datasets: [{
+        label: "% Quitter Poste",
+        data: Object.values(quitPercent),
+        backgroundColor: 'rgba(33, 150, 243, 0.7)'
+      }]
+    }
+  });
+
+  new Chart(document.getElementById("sampleBarChart"), {
+    type: 'bar',
+    data: {
+      labels: sectors,
+      datasets: [{
+        label: "Score personnalisé",
+        data: sampleBarData,
+        backgroundColor: 'rgba(102, 187, 106, 0.8)'
+      }]
+    }
+  });
+
+  gad7.forEach((value, i) => {
+    const ctx = document.getElementById("gauge-" + (i + 1));
+    new Chart(ctx, {
+      type: 'gauge',
+      data: {
+        datasets: [{
+          value: value,
+          minValue: 0,
+          data: [10, 15, 20],
+          backgroundColor: ['#8bc34a', '#ffc107', '#f44336']
+        }]
+      },
+      options: {
+        responsive: true,
+        needle: {
+          radiusPercentage: 2,
+          widthPercentage: 3.2,
+          lengthPercentage: 80,
+          color: 'rgba(0, 0, 0, 1)'
+        },
+        valueLabel: {
+          formatter: Math.round
+        },
+        plugins: {
+          legend: { display: false }
+        }
+      }
+    });
+  });
+</script>
+
+</body>
+</html>

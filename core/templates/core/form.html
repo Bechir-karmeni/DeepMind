@@ -1,0 +1,131 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Test Psychométrique</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #f8fafc;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    .form-container {
+      max-width: 700px;
+      margin: 60px auto;
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+    }
+
+    .question-step {
+      display: none;
+    }
+
+    .question-step.active {
+      display: block;
+    }
+
+    .btn-nav {
+      min-width: 120px;
+    }
+
+    .progress {
+      height: 8px;
+      background-color: #e5e7eb;
+    }
+
+    .progress-bar {
+      background-color: #7c3aed;
+    }
+
+    .form-title {
+      font-weight: bold;
+      font-size: 1.5rem;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    label {
+      font-weight: 500;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .radio-group {
+      margin-left: 20px;
+      margin-bottom: 30px;
+    }
+
+    .submit-btn {
+      width: 100%;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="form-container">
+    <div class="form-title">🧠 Questionnaire Psychométrique</div>
+
+    <div class="progress mb-4">
+      <div class="progress-bar" id="progressBar" style="width: 0%;"></div>
+    </div>
+
+    <form method="post" id="quizForm">
+      {% csrf_token %}
+      {% for field in form %}
+      <div class="question-step" id="step{{ forloop.counter }}">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        <div class="radio-group">{{ field }}</div>
+      </div>
+      {% endfor %}
+
+      <div class="d-flex justify-content-between mt-4">
+        <button type="button" class="btn btn-outline-secondary btn-nav" id="prevBtn" onclick="nextPrev(-1)">Retour</button>
+        <button type="button" class="btn btn-primary btn-nav" id="nextBtn" onclick="nextPrev(1)">Suivant</button>
+      </div>
+
+      <button type="submit" class="btn btn-success submit-btn d-none" id="submitBtn">Soumettre</button>
+    </form>
+  </div>
+
+  <script>
+    let currentStep = 0;
+    let steps = document.querySelectorAll(".question-step");
+    let progressBar = document.getElementById("progressBar");
+    let nextBtn = document.getElementById("nextBtn");
+    let prevBtn = document.getElementById("prevBtn");
+    let submitBtn = document.getElementById("submitBtn");
+
+    function showStep(n) {
+      steps.forEach(step => step.classList.remove("active"));
+      steps[n].classList.add("active");
+
+      prevBtn.style.display = n === 0 ? "none" : "inline-block";
+      nextBtn.style.display = n === steps.length - 1 ? "none" : "inline-block";
+      submitBtn.classList.toggle("d-none", n !== steps.length - 1);
+
+      progressBar.style.width = ((n + 1) / steps.length * 100) + "%";
+    }
+
+    function nextPrev(n) {
+      if (n === 1 && !validateStep()) return;
+
+      currentStep += n;
+      if (currentStep >= steps.length) return;
+      showStep(currentStep);
+    }
+
+    function validateStep() {
+      let radios = steps[currentStep].querySelectorAll("input[type=radio]");
+      return Array.from(radios).some(r => r.checked);
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      showStep(currentStep);
+    });
+  </script>
+</body>
+</html>

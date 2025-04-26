@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Envoyer une évaluation</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: #f6f8fb;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        .card {
+            max-width: 500px;
+            margin: 80px auto;
+            padding: 30px;
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+            background: white;
+        }
+        .btn {
+            width: 100%;
+        }
+        .message {
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card text-start">
+    <h4 class="mb-4 text-center">📩 Envoyer une évaluation</h4>
+
+    {% if message %}
+        <div class="alert alert-success message" role="alert">
+            {{ message }}
+        </div>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label">Nom de l’employé :</label>
+            <input type="text" name="name" class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Email de l’employé :</label>
+            <input type="email" name="email" class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Secteur :</label>
+            <input type="text" name="sector" class="form-control" value="Général">
+        </div>
+
+        <button type="submit" class="btn btn-primary">📨 Envoyer l'email</button>
+    </form>
+</div>
+
+</body>
+</html>
